@@ -3,6 +3,7 @@ import parser
 
 
 def main():
+    print("------ AST MERGE TOOL ------")
     BASE_FILE = sys.argv[1]
     LOCAL_FILE = sys.argv[2]
     REMOTE_FILE = sys.argv[3]
