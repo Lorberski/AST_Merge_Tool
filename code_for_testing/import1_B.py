@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-import parser
-=======
 import sys
->>>>>>> 69e354c9a52aac5ce437085de226f8edcbf840ef
