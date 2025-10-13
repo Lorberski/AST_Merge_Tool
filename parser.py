@@ -32,11 +32,9 @@ def parse_file_to_ast(file_path):
         tree = ast.parse(source_code)
         return tree
     except SyntaxError as e:
-        # Original: print(f"Syntaxfehler in {file_path}: {e}")
         print(f"Syntax error in {file_path}: {e}")
         return None
     except Exception as e:
-        # Original: print(f"Ein Fehler ist aufgetreten: {e}")
         print(f"An error occurred: {e}")
         return None
 

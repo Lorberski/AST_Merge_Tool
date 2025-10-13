@@ -11,7 +11,6 @@ parser.print_ast_tree(treeB)
 
 merged_body = treeA.body + treeB.body
 print("merged_body:")
-print(merged_body)
 
 merged_code = parser.unparse_ast_tree(merged_body)
 print(merged_code)
