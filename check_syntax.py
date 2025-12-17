@@ -15,14 +15,10 @@ def check_file_syntax(file_path: str) -> bool:
 
     except SyntaxError as e:
         if e:
-            logger.error(f"Syntax error in {file_path}:")
-            if e.text:
-                logger.error(f"  Line {e.lineno}, Column {
-                             e.offset}: {e.text.strip()}")
-            logger.error(f"  {e.msg}")
+            logger.error(f"Syntax Error in {file_path}: ", exc_info=True)
         return False
 
     except Exception as ex:
         if ex:
-            logger.error(f"Error checking {file_path}: {ex}")
+            logger.error(f"Error checking {file_path}: ", exc_info=True)
         return False

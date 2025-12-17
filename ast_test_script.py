@@ -29,14 +29,11 @@ def run_test(test_folder):
         str(merged_file)
     ]
 
-    logger.info(f"Running test in {test_folder.name}...")
+    logger.info(f"--- Running test with: {test_folder.name} ---")
     result = subprocess.run(cmd, capture_output=True, text=True)
 
-    logger.debug(result.stdout)
     if result.returncode != 0:
         logger.error("[FAIL] Merge tool returned an error")
-        for line in result.stderr.splitlines():
-            logger.error(line)
         return False
 
     logger.info(f"[OK] Merged file created: {merged_file}")

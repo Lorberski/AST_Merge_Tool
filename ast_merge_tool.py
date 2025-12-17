@@ -10,7 +10,7 @@ from log_config import logger
 
 def main():
 
-    print("Starting Mergeing", flush=True)
+    logger.merge("Starting Mergeing")
 
     BASE_FILE = sys.argv[1]
     LOCAL_FILE = sys.argv[2]
@@ -22,9 +22,8 @@ def main():
 
     for file_path in [BASE_FILE, LOCAL_FILE, REMOTE_FILE]:
         if not check_syntax.check_file_syntax(file_path):
-            logger.error(f"Merge aborted due to syntax error in {file_path}.")
-            sys.exit(1)
 
+            sys.exit(1)
     ast_base = parser.parse_file_to_ast(BASE_FILE)
     ast_local = parser.parse_file_to_ast(LOCAL_FILE)
     ast_remote = parser.parse_file_to_ast(REMOTE_FILE)
