@@ -41,3 +41,11 @@ def parse_file_to_ast(file_path):
 
 def print_ast_tree(ast_object):
     print(ast.dump(ast_object, indent=4))
+
+
+def ast_tree_to_String(ast_object):
+    """
+    is used because the Logger uses the return value of the Function
+    print_ast_tree cant be used because it returns none and the Log file will contain none
+    """
+    return ast.dump(ast_object, indent=4)

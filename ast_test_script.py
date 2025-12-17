@@ -2,6 +2,7 @@
 import sys
 import subprocess
 from pathlib import Path
+from log_config import logger
 
 
 def run_test(test_folder):
@@ -15,7 +16,7 @@ def run_test(test_folder):
     # Check that all required files exist
     for f in [base_file, local_file, remote_file]:
         if not f.exists():
-            print(f"[ERROR] Missing file: {f}")
+            logger.error(f"Missing file: {f}")
             return False
 
     # Call the merge tool
@@ -28,22 +29,23 @@ def run_test(test_folder):
         str(merged_file)
     ]
 
-    print(f"Running test in {test_folder.name}...")
+    logger.info(f"Running test in {test_folder.name}...")
     result = subprocess.run(cmd, capture_output=True, text=True)
 
-    print(result.stdout)
+    logger.debug(result.stdout)
     if result.returncode != 0:
-        print("[FAIL] Merge tool returned an error")
-        print(result.stderr)
+        logger.error("[FAIL] Merge tool returned an error")
+        for line in result.stderr.splitlines():
+            logger.error(line)
         return False
 
-    print(f"[OK] Merged file created: {merged_file}")
+    logger.info(f"[OK] Merged file created: {merged_file}")
     return True
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python ast_test_script.py <test_folder>")
+        logger.error("Usage: python ast_test_script.py <test_folder>")
         sys.exit(1)
 
     test_folder = sys.argv[1]
