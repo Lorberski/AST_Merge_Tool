@@ -5,7 +5,7 @@ import parser
 import astor
 import merger
 import check_syntax
-from log_config import logger
+from log_config import logger, multiline_debug_log
 
 
 def main():
@@ -30,25 +30,24 @@ def main():
 
     logger.debug("------ AST MERGE TOOL ------")
     logger.debug("BASE FILE:")
-    logger.debug(parser.ast_tree_to_String(ast_base))
+    multiline_debug_log(parser.ast_tree_to_String(ast_base))
     logger.debug("-------------------------------------")
     logger.debug("LOCAL FILE:")
-    logger.debug(parser.ast_tree_to_String(ast_local))
+    multiline_debug_log(parser.ast_tree_to_String(ast_local))
     logger.debug("-------------------------------------")
     logger.debug("REMOTE FILE:")
-    logger.debug(parser.ast_tree_to_String(ast_remote))
+    multiline_debug_log(parser.ast_tree_to_String(ast_remote))
     logger.debug("-------------------------------------")
 
     merged_tree = merger.merge_imports(ast_local, ast_remote)
     merged_code = astor.to_source(merged_tree)
-    logger.debug(merged_code)
+    multiline_debug_log(merged_code)
 
     with open(MERGED_FILE, "w", encoding="utf-8") as f:
         f.write(merged_code)
 
-    logger.info("MERGE SUCCESSFUL")
-
     sys.exit(0)
+    logger.info("MERGE SUCCESSFUL")
 
 
 if __name__ == "__main__":

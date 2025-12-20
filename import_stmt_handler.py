@@ -1,4 +1,5 @@
 import ast
+from log_config import logger
 
 
 def extract_imports(tree):
@@ -54,4 +55,7 @@ def replace_top_level(tree, merged_imports):
     ]
     # Insert merged imports and globals at the top
     tree.body = merged_imports + new_body
+    logger.merge("IMPORT STATMENT HANDLER")
+    logger.merge("Merged imports:")
+    logger.merge(merged_imports)
     return tree
