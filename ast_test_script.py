@@ -43,8 +43,8 @@ def run_test(test_folder):
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         logger.error("Usage: python ast_test_script.py <test_folder>")
-        sys.exit(1)
 
+        sys.exit(1)
     test_folder = sys.argv[1]
     success = run_test(test_folder)
 

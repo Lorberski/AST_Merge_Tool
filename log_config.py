@@ -31,7 +31,6 @@ logging.Logger.merge = merge
 
 
 # Console output
-"""
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 
@@ -41,7 +40,6 @@ console_formatter = logging.Formatter(
 console_handler.setFormatter(console_formatter)
 
 logger.addHandler(console_handler)
-"""
 
 
 def multiline_debug_log(multiline_string: str) -> None:
