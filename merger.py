@@ -15,6 +15,14 @@ def merge_imports(local_file_tree, remote_file_tree):
     return import_stmt_handler.replace_top_level(local_file_tree, merged_imports_list)
 
 
+class ChangeMarker:
+    def __init__(self, change_id):
+        self.change_id = change_id
+
+    def __repr__(self):
+        return f"<CHANGE_MARKER id={self.change_id}>"
+
+
 class Merger:
     def __init__(self, ast_base, ast_local, ast_remote):
         self.ast_base = ast_base
@@ -42,11 +50,10 @@ class Merger:
         return merged_imports_list
 
     def merging(self):
-        new_body = []
+        # Die "Sequenz-Liste", die die Struktur der Datei vorgibt
+        merged_sequence = []
 
-        # Wir machen Kopien der Listen, damit wir sie destruktiv (pop) bearbeiten können,
-        # ohne das Originalobjekt für immer zu leeren (falls du es noch brauchst).
-        # Wenn die Listen "verbraucht" werden dürfen, brauchst du das [:] nicht.
+        # Queues kopieren (wie gehabt)
         lcs_queue = self.lcs_local_and_remote_wo_imports[:]
         local_queue = self.local_nodes_wo_import[:]
         remote_queue = self.remote_nodes_wo_imports[:]
@@ -54,53 +61,57 @@ class Merger:
         mapping_changes_left = {}
         mapping_changes_right = {}
 
-        # Change Set ID (Startet bei 0 oder 1, je nach Geschmack)
         change_id = 0
 
         while lcs_queue:
             # 1. Den nächsten Anker aus dem LCS holen
             anchor = lcs_queue.pop(0)
 
-            # --- LOCAL ABARBEITEN ---
+            # --- GAP DETECTION (Lücke vor dem Anker suchen) ---
+
+            # Local Diff sammeln
             diff_nodes_local = []
-            # Solange der Kopf von Local NICHT der Anker ist, gehört es zum Diff
             while local_queue and not self._are_nodes_equal(local_queue[0], anchor):
                 diff_nodes_local.append(local_queue.pop(0))
 
-            # Den Anker selbst aus Local entfernen (er ist ja processed)
+            # Anker aus Local entfernen
             if local_queue:
                 local_queue.pop(0)
 
-            # --- REMOTE ABARBEITEN ---
+            # Remote Diff sammeln
             diff_nodes_remote = []
-            # Solange der Kopf von Remote NICHT der Anker ist...
             while remote_queue and not self._are_nodes_equal(remote_queue[0], anchor):
                 diff_nodes_remote.append(remote_queue.pop(0))
 
-            # Den Anker selbst aus Remote entfernen
+            # Anker aus Remote entfernen
             if remote_queue:
                 remote_queue.pop(0)
 
-            # --- MAPPING SPEICHERN ---
-            # Wir speichern nur, wenn es wirklich Änderungen gab (optional)
-            # Oder immer, um die IDs synchron zu halten (Besser für Vergleich!)
+            # --- ENTSCHEIDUNG: GAB ES EINE LÜCKE/ÄNDERUNG? ---
             if diff_nodes_local or diff_nodes_remote:
+                # A. Mapping speichern
                 mapping_changes_left[change_id] = diff_nodes_local
                 mapping_changes_right[change_id] = diff_nodes_remote
+
+                # B. Marker in die Sequenz einfügen (VOR dem Anker)
+                merged_sequence.append(ChangeMarker(change_id))
+
                 change_id += 1
 
-            # Optional: Wenn du auch leere "Zwischenräume" zählen willst,
-            # entferne das 'if' oben und rücke die Zuweisungen ein.
+            # 2. Den unveränderten Anker (LCS Node) in die Sequenz einfügen
+            merged_sequence.append(anchor)
 
-        # --- REST-NODES (TAIL) ---
-        # Nach dem letzten LCS-Node kann noch Code kommen (ganz am Ende der Datei)
+        # --- TAIL (Rest nach dem letzten Anker) ---
         if local_queue or remote_queue:
-            mapping_changes_left[change_id] = list(
-                local_queue)  # Rest als Liste
-            mapping_changes_right[change_id] = list(
-                remote_queue)  # Rest als Liste
+            # Mapping speichern
+            mapping_changes_left[change_id] = list(local_queue)
+            mapping_changes_right[change_id] = list(remote_queue)
 
-        return mapping_changes_left, mapping_changes_right
+            # Marker ganz ans Ende der Sequenz hängen
+            merged_sequence.append(ChangeMarker(change_id))
+
+        # Rückgabe: Die Struktur-Liste UND die Inhalte der Änderungen
+        return merged_sequence, mapping_changes_left, mapping_changes_right
 
     def _are_nodes_equal(self, node1, node2):
         """
