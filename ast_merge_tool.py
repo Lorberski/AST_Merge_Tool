@@ -3,7 +3,7 @@
 import sys
 import parser
 import astor
-import merger
+from merger import Merger
 import check_syntax
 from log_config import logger, multiline_debug_log
 import ast_mapper
@@ -48,23 +48,30 @@ def main():
         logger.debug("-------------------------------------")
         logger.debug("LOCAL FILE:")
         multiline_debug_log(parser.ast_tree_to_String(ast_local))
-        logger.debug("-------------------------------------")
         logger.debug("REMOTE FILE:")
+        logger.debug("-------------------------------------")
         multiline_debug_log(parser.ast_tree_to_String(ast_remote))
         logger.debug("-------------------------------------")
 
-        merged_tree = merger.merge_imports(ast_local, ast_remote)
-        merged_code = astor.to_source(merged_tree)
-        multiline_debug_log(merged_code)
+        # merged_tree = merger.merge_imports(ast_local, ast_remote)
+        # merged_code = astor.to_source(merged_tree)
+        # multiline_debug_log(merged_code)
+
+        logger.debug("test Merge Class:")
+        merger = Merger(ast_base, ast_local, ast_remote)
+
+        changsets = merger.merging()
+        logger.debug("changset from merging:")
+        logger.debug(changsets)
 
         with open(MERGED_FILE, "w", encoding="utf-8") as f:
-            f.write(merged_code)
+            f.write("needs to be added")
 
         sys.exit(0)
         logger.info("MERGE SUCCESSFUL")
     except Exception as e:
-        logger.error("AST Merge Tool failed unexpectedly: ", e)
         sys.exit(1)
+        logger.error("AST Merge Tool failed unexpectedly: ", e)
 
 
 if __name__ == "__main__":
