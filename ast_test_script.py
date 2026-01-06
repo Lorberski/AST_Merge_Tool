@@ -33,7 +33,8 @@ def run_test(test_folder):
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
-        logger.error("[FAIL] Merge tool returned an error")
+        logger.info(
+            "[FAIL] Merge tool terminated. Please check the log files for details.")
         return False
 
     logger.info(f"[OK] Merged file created: {merged_file}")
