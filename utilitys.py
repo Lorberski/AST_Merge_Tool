@@ -208,3 +208,37 @@ def log_file_content(file_path):
                 logger.merge(line.rstrip())
     except Exception as e:
         logger.error("Error reading file in log_file_content", e)
+
+
+def remove_function_by_name_in_mapping(func_name, mapping_changes):
+    """
+    Removes a function definition (def or async def) from a mapping of change sets.
+    Searches in all lists within the dictionary and modifies the specific list in-place.
+
+    Args:
+        func_name (str): The name of the function to be removed.
+        mapping_changes (dict): A dictionary where keys are IDs and values are lists of AST nodes 
+                                (e.g. {1: [node_a, node_b], 2: [node_c]}).
+
+    Returns:
+        bool: True if the function was found and removed, False otherwise.
+    """
+    # Iterate through all change sets (lists) in the mapping
+    for change_id, nodes in mapping_changes.items():
+
+        node_to_remove = None
+
+        # Iterate through the nodes in the current list
+        for node in nodes:
+            # Check for function definitions
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name == func_name:
+                    node_to_remove = node
+                    break  # Found the node in this list
+
+        # If found in the current list, remove it and stop searching entirely
+        if node_to_remove:
+            nodes.remove(node_to_remove)
+            return True
+
+    return False

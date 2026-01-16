@@ -164,17 +164,22 @@ class Merger:
         else:
             logger.merge(
                 "Auto merging not possible due node types that the merge tool can't handle yet")
-            logger.merge("Local Nodes that can't be handled:")
-            left_str = utilitys.format_nodes_with_lineno(other_nodes_left)
-            for line in left_str.splitlines():
-                logger.merge(line)
-            left_str = utilitys.format_nodes_with_lineno(other_nodes_right)
-            logger.merge("Remote Nodes that can't be handled:")
-            for line in left_str.splitlines():
-                logger.merge(line)
+            if other_nodes_left:
+                logger.merge("Local Nodes that can't be handled:")
+                left_str = utilitys.format_nodes_with_lineno(other_nodes_left)
+                for line in left_str.splitlines():
+                    logger.merge(line)
+
+            if other_nodes_right:
+                right_str = utilitys.format_nodes_with_lineno(
+                    other_nodes_right)
+                logger.merge("Remote Nodes that can't be handled:")
+                for line in right_str.splitlines():
+                    logger.merge(line)
+
             auto_merging_possible = False
 
-        if self.merged_imports_list:
+        if self.merged_imports_list and auto_merging_possible:
             full_tree_body.append(self.merged_imports_list)
             logger.merge("Merged Imports:")
             for line in utilitys.node_to_string(self.merged_imports_list).splitlines():
@@ -183,16 +188,33 @@ class Merger:
         deleted_fun_left, deleted_fun_right = utilitys.detect_deleted_functions(
             ast_mapper.map_top_level_nodes_without_imports(self.ast_base), nodes_left, nodes_right)
 
-        if deleted_fun_left:
-            logger.debug("deleted_fun_left:")
-            logger.debug(deleted_fun_left)
-
         for fun in deleted_fun_left:
             if utilitys.is_function_referenced(fun, nodes_right):
                 logger.merge(f"Auto merging not possible. Function '{
                              fun}' was deleted in LEFT (Local), but new references to it were found in RIGHT (Remote)")
                 auto_merging_possible = False
+            else:
+                utilitys.remove_function_by_name_in_mapping(
+                    fun, mapping_changes_right)
+                logger.merge(
+                    f"Function '{fun}' was deleted in LEFT (Local). "
+                    "No references found in RIGHT (Remote). "
+                    "Removed function from merge result (deleted from RIGHT set)."
+                )
 
+        for fun in deleted_fun_right:
+            if utilitys.is_function_referenced(fun, nodes_left):
+                logger.merge(f"Auto merging not possible. Function '{
+                             fun}' was deleted in RIGHT (Remote), but new references to it were found in LEFT (Local)")
+                auto_merging_possible = False
+            else:
+                utilitys.remove_function_by_name_in_mapping(
+                    fun, mapping_changes_left)
+                logger.merge(
+                    f"Function '{fun}' was deleted in RIGHT (Remote). "
+                    "No references found in LEFT (Local). "
+                    "Removed function from merge result (deleted from LEFT set)."
+                )
         for item in merged_sequence:
             if isinstance(item, ChangeMarker):
                 # Hier ist ein Konflikt/Änderung!
