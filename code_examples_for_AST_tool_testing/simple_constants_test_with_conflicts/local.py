@@ -1,0 +1,4 @@
+A = 1
+B = 2
+CONFLICTING_CONSTANT = "foo"
+C = 3

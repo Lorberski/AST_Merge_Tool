@@ -96,7 +96,6 @@ def analyze_node_types(nodes_left, nodes_right):
         if not is_valid_node(node):
             other_nodes_right.append(node)
             all_clean = False
-
     return all_clean, other_nodes_left, other_nodes_right
 
 

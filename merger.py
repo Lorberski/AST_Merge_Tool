@@ -101,8 +101,8 @@ class Merger:
 
             # 2. Den unveränderten Anker (LCS Node) in die Sequenz einfügen
             merged_sequence.append(anchor)
-
         # --- TAIL (Rest nach dem letzten Anker) ---
+
         if local_queue or remote_queue:
             # Mapping speichern
             mapping_changes_left[change_id] = list(local_queue)
@@ -127,6 +127,7 @@ class Merger:
             logger.debug("collisons:")
             logger.merge(
                 "Auto mergeing not possible due to conflicting assignments.")
+
             for var_name in sorted(collisions):
                 logger.merge(f"--- Conflict for Variable: '{var_name}' ---")
 
@@ -172,7 +173,7 @@ class Merger:
 
         if self.merged_imports_list:
             full_tree_body.append(self.merged_imports_list)
-            logger.merge("Added Imports:")
+            logger.merge("Merged Imports:")
             for line in utilitys.node_to_string(self.merged_imports_list).splitlines():
                 logger.merge(line)
 
@@ -190,9 +191,8 @@ class Merger:
                 # Hier rufst du deine Conflict-Resolver Logik auf:
                 # z.B.: resolved_nodes = resolve_conflict(nodes_l, nodes_r)
                 # full_tree_body.extend(resolved_nodes)
-                pass
-
             else:
+
                 # Das ist ein AST-Node (Anker), einfach übernehmen
                 full_tree_body.append(item)
 
@@ -235,7 +235,7 @@ def get_assigned_names(node):
 def check_assignment_collision(nodes_left, nodes_right):
     """
     Prüft, ob in beiden Listen dieselbe Variable zugewiesen wird.
-    Returns: 
+    Returns:
         collisions: dict
             Schlüssel: Name der kollidierenden Variable
             Wert: dict mit 'left' und 'right', die Listen der Nodes enthalten, die die Variable zuweisen

@@ -7,6 +7,7 @@ from merger import Merger
 import check_syntax
 from log_config import logger, multiline_debug_log
 import ast_mapper
+import autopep8
 
 
 def main():
@@ -78,8 +79,11 @@ def main():
             "Merge process terminated due to conflicts that cannot be resolved automatically by the tool.")
         sys.exit(1)
 
+    raw_code = ast.unparse(merged_tree)
+    formatted_code = autopep8.fix_code(raw_code)
+
     with open(MERGED_FILE, "w", encoding="utf-8") as f:
-        f.write(ast.unparse(merged_tree))
+        f.write(formatted_code)
 
     logger.merge("[OK] MERGE SUCCESSFUL")
     sys.exit(0)
