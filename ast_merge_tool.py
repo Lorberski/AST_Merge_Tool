@@ -8,6 +8,7 @@ import check_syntax
 from log_config import logger, multiline_debug_log
 import ast_mapper
 import autopep8
+import utilitys
 
 
 def main():
@@ -81,6 +82,27 @@ def main():
 
     raw_code = ast.unparse(merged_tree)
     formatted_code = autopep8.fix_code(raw_code)
+
+    logger.merge("---------------- MERGE RESULT ---------------------")
+    logger.merge("BASE FILE:")
+    for line in BASE_FILE.splitlines():
+        logger.debug(line)
+        utilitys.log_file_content(BASE_FILE)
+    logger.merge("-------------------------------------")
+    logger.merge("LOCAL FILE:")
+    for line in LOCAL_FILE.splitlines():
+        logger.debug(line)
+        utilitys.log_file_content(LOCAL_FILE)
+    logger.merge("-------------------------------------")
+    logger.merge("REMOTE FILE:")
+    for line in REMOTE_FILE.splitlines():
+        logger.debug(line)
+        utilitys.log_file_content(REMOTE_FILE)
+    logger.merge("-------------------------------------")
+    logger.merge("MERGE FILE:")
+    for line in formatted_code.splitlines():
+        logger.merge(line)
+    logger.merge("-------------------------------------")
 
     with open(MERGED_FILE, "w", encoding="utf-8") as f:
         f.write(formatted_code)

@@ -1,6 +1,6 @@
 import os
-import sys
 from math import sqrt
+import sys
 x = 2
 y = 3
 

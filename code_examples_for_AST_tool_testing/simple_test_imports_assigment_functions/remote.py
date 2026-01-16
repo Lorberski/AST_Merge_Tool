@@ -1,6 +1,5 @@
 import os
 import sys
-from math import sqrt
 
 m = 2
 l = 3

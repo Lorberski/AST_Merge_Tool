@@ -1,4 +1,5 @@
 import ast
+from log_config import logger
 
 
 def format_nodes_with_lineno(node_or_list):
@@ -114,3 +115,80 @@ def is_constant_assignment(node):
         if getattr(node, "value", None) is not None and isinstance(node.value, ast.Constant):
             return True
     return False
+
+
+def detect_deleted_functions(nodes_base, nodes_local, nodes_remote):
+    """
+    Ermittelt Funktionen, die in Base vorhanden waren, aber in Local oder Remote gelöscht wurden.
+
+    Returns:
+        deleted_in_local (list): Namen der Funktionen, die in Local fehlen.
+        deleted_in_remote (list): Namen der Funktionen, die in Remote fehlen.
+    """
+    # 1. Namen extrahieren (als Set für schnelle Vergleiche)
+    names_base = _get_func_names_set(nodes_base)
+    names_local = _get_func_names_set(nodes_local)
+    names_remote = _get_func_names_set(nodes_remote)
+
+    # 2. Prüfung: Was ist in Base, aber NICHT in Local? (Mengen-Differenz)
+    deleted_in_local = list(names_base - names_local)
+
+    # 3. Prüfung: Was ist in Base, aber NICHT in Remote?
+    deleted_in_remote = list(names_base - names_remote)
+
+    return deleted_in_local, deleted_in_remote
+
+
+def _get_func_names_set(nodes):
+    """Hilfsfunktion: Gibt ein Set aller Funktionsnamen zurück."""
+    if nodes is None:
+        return set()
+
+    return {
+        node.name
+        for node in nodes
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+
+
+def is_function_referenced(func_name, nodes):
+    """
+    Checks if a function name is referenced (used) within a list of AST nodes.
+
+    Args:
+        func_name (str): The name of the function to search for (e.g., "calculate_sum").
+        nodes (list): A list of AST nodes (e.g., your ChangeSet or merged_sequence).
+
+    Returns:
+        bool: True if a reference was found, otherwise False.
+    """
+    if not nodes:
+        return False
+
+    for node in nodes:
+        # ast.walk recursively traverses all children of the node
+        # (e.g., deep inside If-statements or nested functions)
+        for child in ast.walk(node):
+
+            # We look for 'ast.Name' nodes (identifiers for variables or functions)
+            if isinstance(child, ast.Name):
+
+                # 1. The name must match the target function name.
+                # 2. The context must be 'Load' (meaning: the value is being read/called).
+                #    This explicitly excludes assignments (Store) or deletions (Del).
+                if child.id == func_name and isinstance(child.ctx, ast.Load):
+                    return True
+
+    return False
+
+
+def log_file_content(file_path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            # Read line by line
+            for line in f:
+                # .rstrip() removes the new line character at the end of the line,
+                # because the logger usually adds its own.
+                logger.merge(line.rstrip())
+    except Exception as e:
+        logger.error("Error reading file in log_file_content", e)

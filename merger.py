@@ -116,6 +116,9 @@ class Merger:
 
     def merging(self, merged_sequence, mapping_changes_left, mapping_changes_right):
         full_tree_body = []
+        auto_merging_possible = True
+
+        # nodes_left and nodes_right are only the change nodes without imports
         nodes_left = [node for node_list in mapping_changes_left.values()
                       for node in node_list]
 
@@ -148,7 +151,7 @@ class Merger:
                     logger.merge(line)
 
             logger.merge("-------------------------------------------")
-            return False
+            auto_merging_possible = False
         else:
             logger.debug("no assignments conflicts detected")
 
@@ -169,13 +172,26 @@ class Merger:
             logger.merge("Remote Nodes that can't be handled:")
             for line in left_str.splitlines():
                 logger.merge(line)
-            return False
+            auto_merging_possible = False
 
         if self.merged_imports_list:
             full_tree_body.append(self.merged_imports_list)
             logger.merge("Merged Imports:")
             for line in utilitys.node_to_string(self.merged_imports_list).splitlines():
                 logger.merge(line)
+
+        deleted_fun_left, deleted_fun_right = utilitys.detect_deleted_functions(
+            ast_mapper.map_top_level_nodes_without_imports(self.ast_base), nodes_left, nodes_right)
+
+        if deleted_fun_left:
+            logger.debug("deleted_fun_left:")
+            logger.debug(deleted_fun_left)
+
+        for fun in deleted_fun_left:
+            if utilitys.is_function_referenced(fun, nodes_right):
+                logger.merge(f"Auto merging not possible. Function '{
+                             fun}' was deleted in LEFT (Local), but new references to it were found in RIGHT (Remote)")
+                auto_merging_possible = False
 
         for item in merged_sequence:
             if isinstance(item, ChangeMarker):
@@ -196,7 +212,10 @@ class Merger:
                 # Das ist ein AST-Node (Anker), einfach übernehmen
                 full_tree_body.append(item)
 
-        return full_tree_body
+        if auto_merging_possible:
+            return full_tree_body
+        else:
+            return False
 
     def _are_nodes_equal(self, node1, node2):
         """
