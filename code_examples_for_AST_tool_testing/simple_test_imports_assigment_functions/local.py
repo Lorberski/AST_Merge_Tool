@@ -10,3 +10,4 @@ def add(a, b):
 
 
 z = add(x, y)
+print(z)

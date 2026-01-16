@@ -9,6 +9,8 @@ def add(a, b):
     return a + b
 
 
+z = add(x, y)
+print(z)
 m = 2
 l = 3
 

@@ -64,7 +64,8 @@ def analyze_node_types(nodes_left, nodes_right):
         ast.Assign,
         ast.AnnAssign,
         ast.FunctionDef,
-        ast.AsyncFunctionDef
+        ast.AsyncFunctionDef,
+        ast.Expr  # but only print statements
     )
 
     # Lists to store nodes that are NOT allowed
@@ -74,16 +75,31 @@ def analyze_node_types(nodes_left, nodes_right):
     # Flag indicating whether all nodes are valid
     all_clean = True
 
+    def is_print_call(node):
+        """
+        Helper to check if an ast.Expr node is a call to 'print'.
+        Structure: Expr -> value=Call -> func=Name(id='print')
+        """
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            # Check if the function being called is a simple Name (not obj.method())
+            if isinstance(node.value.func, ast.Name):
+                return node.value.func.id == 'print'
+        return False
+
     def is_valid_node(node):
         """
         Checks if a node is allowed:
-        - FunctionDef / AsyncFunctionDef -> always allowed
-        - Assign / AnnAssign -> only allowed if it assigns a constant
+        ast.Assign,
+        ast.AnnAssign,
+        ast.FunctionDef,
+        ast.AsyncFunctionDef,
+        ast.Expr  # but only print statements
         """
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Assign, ast.AnnAssign)):
             return True
-        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
-            return is_constant_assignment(node)
+        elif isinstance(node, ast.Expr):
+            return is_print_call(node)
+
         return False
 
     # 1. Check left nodes
