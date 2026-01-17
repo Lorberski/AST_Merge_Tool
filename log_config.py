@@ -4,7 +4,7 @@ import os
 logger = logging.getLogger(__name__)
 
 # Log file output
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.propagate = True
 os.makedirs("Logs", exist_ok=True)
 log_file_path = os.path.join("Logs", "merge_tool.log")

@@ -4,6 +4,7 @@ import ast_mapper
 import import_stmt_handler
 import ast
 import utilitys
+import function_stmt_handler as fsh
 
 
 def merge_imports(local_file_tree, remote_file_tree):
@@ -129,7 +130,7 @@ class Merger:
             logger.debug("in merger")
             logger.debug("collisons:")
             logger.merge(
-                "Auto mergeing not possible due to conflicting assignments.")
+                "Auto merging not possible due to conflicting assignments.")
 
             for var_name in sorted(collisions):
                 logger.merge(f"--- Conflict for Variable: '{var_name}' ---")
@@ -193,6 +194,10 @@ class Merger:
                 logger.merge(f"Auto merging not possible. Function '{
                              fun}' was deleted in LEFT (Local), but new references to it were found in RIGHT (Remote)")
                 auto_merging_possible = False
+                refs = utilitys.find_function_references(fun, nodes_right)
+                for ref in refs:
+                    logger.merge(f"   -> Line {ref['lineno']}: {ref['code']}")
+
             else:
                 utilitys.remove_function_by_name_in_mapping(
                     fun, mapping_changes_right)
@@ -207,6 +212,10 @@ class Merger:
                 logger.merge(f"Auto merging not possible. Function '{
                              fun}' was deleted in RIGHT (Remote), but new references to it were found in LEFT (Local)")
                 auto_merging_possible = False
+                refs = utilitys.find_function_references(fun, nodes_left)
+                for ref in refs:
+                    logger.merge(f"   -> Line {ref['lineno']}: {ref['code']}")
+
             else:
                 utilitys.remove_function_by_name_in_mapping(
                     fun, mapping_changes_left)
@@ -215,23 +224,35 @@ class Merger:
                     "No references found in LEFT (Local). "
                     "Removed function from merge result (deleted from LEFT set)."
                 )
+
+        fsh.process_and_merge_functions(
+            mapping_changes_left, mapping_changes_right)
+
         for item in merged_sequence:
             if isinstance(item, ChangeMarker):
-                # Hier ist ein Konflikt/Änderung!
                 cid = item.change_id
                 nodes_l = mapping_changes_left[cid]
                 nodes_r = mapping_changes_right[cid]
 
+                if nodes_l and nodes_r and auto_merging_possible:
+                    logger.merge("Conflicting nodes:")
+                    logger.merge("LEFT (Local):")
+                    str_l = utilitys.format_nodes_with_lineno(nodes_l)
+                    for line in str_l.splitlines():
+                        logger.merge(line)
+
+                    logger.merge("RIGHT (Remote):")
+                    str_r = utilitys.format_nodes_with_lineno(nodes_r)
+                    for line in str_r.splitlines():
+                        logger.merge(line)
+
+                    logger.merge(
+                        "Can be merged automatically and will be added to the merge.")
+
                 full_tree_body.append(nodes_l)
                 full_tree_body.append(nodes_r)
-                # for node in nodes_l:
 
-                # Hier rufst du deine Conflict-Resolver Logik auf:
-                # z.B.: resolved_nodes = resolve_conflict(nodes_l, nodes_r)
-                # full_tree_body.extend(resolved_nodes)
             else:
-
-                # Das ist ein AST-Node (Anker), einfach übernehmen
                 full_tree_body.append(item)
 
         if auto_merging_possible:

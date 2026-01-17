@@ -10,7 +10,7 @@ def check_file_syntax(file_path: str) -> bool:
         with open(file_path, "r", encoding="utf-8") as f:
             code = f.read()
         compile(code, file_path, "exec")
-        logger.info(f"No syntax errors found in {file_path}.")
+        logger.debug(f"No syntax errors found in {file_path}.")
         return True
 
     except SyntaxError as e:

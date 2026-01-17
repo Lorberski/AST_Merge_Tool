@@ -14,7 +14,7 @@ import utilitys
 def main():
 
     # try:
-    logger.merge("Starting Mergeing")
+    logger.merge("Starting Merging")
 
     BASE_FILE = sys.argv[1]
     LOCAL_FILE = sys.argv[2]
@@ -83,6 +83,16 @@ def main():
     raw_code = ast.unparse(merged_tree)
     formatted_code = autopep8.fix_code(raw_code)
 
+    with open(MERGED_FILE, "w", encoding="utf-8") as f:
+        f.write(formatted_code)
+        # test if MERGED_FILE is checked for SyntaxErrors
+        # f.write("(")
+
+    if not check_syntax.check_file_syntax(MERGED_FILE):
+        logger.error(
+            "Automatic merging is not possible due to syntax errors in the merged output.")
+        sys.exit(1)
+
     logger.merge("---------------- MERGE RESULT ---------------------")
     logger.merge("BASE FILE:")
     for line in BASE_FILE.splitlines():
@@ -94,7 +104,6 @@ def main():
         logger.debug(line)
         utilitys.log_file_content(LOCAL_FILE)
     logger.merge("-------------------------------------")
-    logger.merge("REMOTE FILE:")
     for line in REMOTE_FILE.splitlines():
         logger.debug(line)
         utilitys.log_file_content(REMOTE_FILE)
@@ -103,9 +112,6 @@ def main():
     for line in formatted_code.splitlines():
         logger.merge(line)
     logger.merge("-------------------------------------")
-
-    with open(MERGED_FILE, "w", encoding="utf-8") as f:
-        f.write(formatted_code)
 
     logger.merge("[OK] MERGE SUCCESSFUL")
     sys.exit(0)

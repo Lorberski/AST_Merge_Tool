@@ -198,6 +198,58 @@ def is_function_referenced(func_name, nodes):
     return False
 
 
+def find_function_references(func_name, nodes):
+    """
+    Searches for references to a function and returns their locations and context.
+
+    Args:
+        func_name (str): The name of the function to search for.
+        nodes (list): A list of AST nodes (e.g., your ChangeSet).
+
+    Returns:
+        list: A list of dictionaries. Each dictionary contains:
+              - 'lineno': The line number of the match.
+              - 'code': The code string of the statement containing the match.
+              Returns an empty list [] if no references are found.
+    """
+    found_refs = []
+
+    if not nodes:
+        return found_refs
+
+    for node in nodes:
+        # We walk through every statement (node) in the list
+        for child in ast.walk(node):
+
+            if isinstance(child, ast.Name):
+                # Check for match (Name matches AND it is being loaded/used)
+                if child.id == func_name and isinstance(child.ctx, ast.Load):
+
+                    # 1. Get Line Number
+                    # We try to get the line number from the parent statement ('node'),
+                    # because 'child' (the Name node) sometimes lacks line info in constructed ASTs.
+                    lineno = getattr(node, 'lineno', '?')
+
+                    # 2. Get Code Context
+                    # We unparse the PARENT node (the statement), so we see "x = my_func()"
+                    # instead of just "my_func".
+                    try:
+                        code_context = ast.unparse(node)
+                    except Exception:
+                        code_context = "<could not unparse node>"
+
+                    found_refs.append({
+                        'lineno': lineno,
+                        'code': code_context
+                    })
+
+                    # Stop searching in this specific node/statement to avoid
+                    # duplicates if the function is called twice in the same line.
+                    break
+
+    return found_refs
+
+
 def log_file_content(file_path):
     try:
         with open(file_path, "r", encoding="utf-8") as f:
