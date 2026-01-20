@@ -6,8 +6,12 @@ logger = logging.getLogger(__name__)
 # Log file output
 logger.setLevel(logging.INFO)
 logger.propagate = True
-os.makedirs("Logs", exist_ok=True)
-log_file_path = os.path.join("Logs", "merge_tool.log")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_DIR = os.path.join(BASE_DIR, "Logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+log_file_path = os.path.join(LOG_DIR, "merge_tool.log")
+
 file_handler = logging.FileHandler(
     log_file_path, mode="a", encoding="utf-8")
 file_handler.setLevel(logging.DEBUG)

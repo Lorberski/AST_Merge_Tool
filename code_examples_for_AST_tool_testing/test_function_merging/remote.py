@@ -1,5 +1,6 @@
 def calculate_metrics():
-    height = 20
     width = 10
+    height = 20
+    offset = 15
     area = width * height
     return area
