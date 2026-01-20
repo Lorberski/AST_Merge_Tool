@@ -14,7 +14,9 @@ import utilitys
 def main():
 
     try:
-        logger.merge("Starting Merging")
+        logger.merge("+------------------------------------+")
+        logger.merge("|          STARTING MERGING          |")
+        logger.merge("+------------------------------------+")
 
         BASE_FILE = sys.argv[1]
         LOCAL_FILE = sys.argv[2]
@@ -34,14 +36,10 @@ def main():
 
         locoal_top_nodes = ast_mapper.map_top_level_nodes(ast_local)
         remote_top_nodes = ast_mapper.map_top_level_nodes(ast_remote)
+
         logger.debug("LCS TEST:")
         logger.debug("local_top_nodes:")
         logger.debug(locoal_top_nodes)
-        # logger.debug("remote_top_nodes:")
-        # logger.debug(remote_top_nodes)
-        # logger.debug("LCS result:")
-        # logger.debug(ast_mapper.get_lcs_with_difflib(
-        #   locoal_top_nodes, remote_top_nodes))
         logger.debug("localt_top_nodes without imports:")
         logger.debug(ast_mapper.map_top_level_nodes_without_imports(ast_local))
 
@@ -54,12 +52,8 @@ def main():
         logger.debug("-------------------------------------")
         multiline_debug_log(parser.ast_tree_to_String(ast_remote))
         logger.debug("-------------------------------------")
-
-        # merged_tree = merger.merge_imports(ast_local, ast_remote)
-        # merged_code = astor.to_source(merged_tree)
-        # multiline_debug_log(merged_code)
-
-        logger.debug("test Merge Class:")
+       
+        # ------------------------------------ MERGING --------------------------------------------------
         merger = Merger(ast_base, ast_local, ast_remote)
 
         merged_sequence, mapping_changes_left, mapping_changes_right = merger.create_changesets()
@@ -74,6 +68,8 @@ def main():
             mapping_changes_left,
             mapping_changes_right
         )
+
+        # ----------------------------------------------------------------------------------------------
 
         if not merged_tree:
             logger.merge(

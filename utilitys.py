@@ -51,15 +51,10 @@ def node_to_string(node_or_list):
 
 def analyze_node_types(nodes_left, nodes_right):
     """
-    Checks whether the lists contain ONLY constant assignments or functions.
+    Checks whether the lists contain ONLY  assignments or functions.
     If not, returns the 'other' nodes.
-
-    Returns:
-        is_pure (bool): True if only constant assignments / functions are present.
-        map_left (list): List of nodes from left that are not allowed.
-        map_right (list): List of nodes from right that are not allowed.
     """
-    # Allowed node types
+
     ALLOWED_TYPES = (
         ast.Assign,
         ast.AnnAssign,
@@ -72,7 +67,6 @@ def analyze_node_types(nodes_left, nodes_right):
     other_nodes_left = []
     other_nodes_right = []
 
-    # Flag indicating whether all nodes are valid
     all_clean = True
 
     def is_print_call(node):
@@ -102,13 +96,13 @@ def analyze_node_types(nodes_left, nodes_right):
 
         return False
 
-    # 1. Check left nodes
+    #  Check left nodes
     for node in nodes_left:
         if not is_valid_node(node):
             other_nodes_left.append(node)
             all_clean = False
 
-    # 2. Check right nodes
+    #  Check right nodes
     for node in nodes_right:
         if not is_valid_node(node):
             other_nodes_right.append(node)
@@ -117,15 +111,6 @@ def analyze_node_types(nodes_left, nodes_right):
 
 
 def is_constant_assignment(node):
-    """
-    Checks if a node is a constant assignment.
-    Examples:
-        TIMEOUT = 30        -> True
-        DEBUG = True        -> True
-        VERSION: str = "1"  -> True
-        x = y + 1           -> False
-        x: int              -> False (no value)
-    """
     if isinstance(node, (ast.Assign, ast.AnnAssign)):
         # Check if the value exists and is a constant
         if getattr(node, "value", None) is not None and isinstance(node.value, ast.Constant):
@@ -134,29 +119,21 @@ def is_constant_assignment(node):
 
 
 def detect_deleted_functions(nodes_base, nodes_local, nodes_remote):
-    """
-    Ermittelt Funktionen, die in Base vorhanden waren, aber in Local oder Remote gelöscht wurden.
-
-    Returns:
-        deleted_in_local (list): Namen der Funktionen, die in Local fehlen.
-        deleted_in_remote (list): Namen der Funktionen, die in Remote fehlen.
-    """
-    # 1. Namen extrahieren (als Set für schnelle Vergleiche)
+    
+    # extract names
     names_base = _get_func_names_set(nodes_base)
     names_local = _get_func_names_set(nodes_local)
     names_remote = _get_func_names_set(nodes_remote)
 
-    # 2. Prüfung: Was ist in Base, aber NICHT in Local? (Mengen-Differenz)
     deleted_in_local = list(names_base - names_local)
 
-    # 3. Prüfung: Was ist in Base, aber NICHT in Remote?
     deleted_in_remote = list(names_base - names_remote)
 
     return deleted_in_local, deleted_in_remote
 
 
 def _get_func_names_set(nodes):
-    """Hilfsfunktion: Gibt ein Set aller Funktionsnamen zurück."""
+    """returns a set of all function nodes from a List of Nodes"""
     if nodes is None:
         return set()
 
@@ -170,28 +147,15 @@ def _get_func_names_set(nodes):
 def is_function_referenced(func_name, nodes):
     """
     Checks if a function name is referenced (used) within a list of AST nodes.
-
-    Args:
-        func_name (str): The name of the function to search for (e.g., "calculate_sum").
-        nodes (list): A list of AST nodes (e.g., your ChangeSet or merged_sequence).
-
-    Returns:
-        bool: True if a reference was found, otherwise False.
     """
     if not nodes:
         return False
 
     for node in nodes:
-        # ast.walk recursively traverses all children of the node
-        # (e.g., deep inside If-statements or nested functions)
         for child in ast.walk(node):
 
-            # We look for 'ast.Name' nodes (identifiers for variables or functions)
             if isinstance(child, ast.Name):
 
-                # 1. The name must match the target function name.
-                # 2. The context must be 'Load' (meaning: the value is being read/called).
-                #    This explicitly excludes assignments (Store) or deletions (Del).
                 if child.id == func_name and isinstance(child.ctx, ast.Load):
                     return True
 
@@ -201,16 +165,6 @@ def is_function_referenced(func_name, nodes):
 def find_function_references(func_name, nodes):
     """
     Searches for references to a function and returns their locations and context.
-
-    Args:
-        func_name (str): The name of the function to search for.
-        nodes (list): A list of AST nodes (e.g., your ChangeSet).
-
-    Returns:
-        list: A list of dictionaries. Each dictionary contains:
-              - 'lineno': The line number of the match.
-              - 'code': The code string of the statement containing the match.
-              Returns an empty list [] if no references are found.
     """
     found_refs = []
 
@@ -218,21 +172,14 @@ def find_function_references(func_name, nodes):
         return found_refs
 
     for node in nodes:
-        # We walk through every statement (node) in the list
         for child in ast.walk(node):
 
             if isinstance(child, ast.Name):
-                # Check for match (Name matches AND it is being loaded/used)
                 if child.id == func_name and isinstance(child.ctx, ast.Load):
 
-                    # 1. Get Line Number
-                    # We try to get the line number from the parent statement ('node'),
-                    # because 'child' (the Name node) sometimes lacks line info in constructed ASTs.
+        
                     lineno = getattr(node, 'lineno', '?')
 
-                    # 2. Get Code Context
-                    # We unparse the PARENT node (the statement), so we see "x = my_func()"
-                    # instead of just "my_func".
                     try:
                         code_context = ast.unparse(node)
                     except Exception:
@@ -243,54 +190,38 @@ def find_function_references(func_name, nodes):
                         'code': code_context
                     })
 
-                    # Stop searching in this specific node/statement to avoid
-                    # duplicates if the function is called twice in the same line.
+
                     break
 
     return found_refs
 
 
-def log_file_content(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            # Read line by line
-            for line in f:
-                # .rstrip() removes the new line character at the end of the line,
-                # because the logger usually adds its own.
-                logger.merge(line.rstrip())
-    except Exception as e:
-        logger.error("Error reading file in log_file_content", e)
-
-
 def remove_function_by_name_in_mapping(func_name, mapping_changes):
     """
     Removes a function definition (def or async def) from a mapping of change sets.
-    Searches in all lists within the dictionary and modifies the specific list in-place.
-
-    Args:
-        func_name (str): The name of the function to be removed.
-        mapping_changes (dict): A dictionary where keys are IDs and values are lists of AST nodes 
-                                (e.g. {1: [node_a, node_b], 2: [node_c]}).
-
-    Returns:
-        bool: True if the function was found and removed, False otherwise.
     """
-    # Iterate through all change sets (lists) in the mapping
     for change_id, nodes in mapping_changes.items():
 
         node_to_remove = None
 
-        # Iterate through the nodes in the current list
         for node in nodes:
-            # Check for function definitions
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 if node.name == func_name:
                     node_to_remove = node
-                    break  # Found the node in this list
+                    break 
 
-        # If found in the current list, remove it and stop searching entirely
         if node_to_remove:
             nodes.remove(node_to_remove)
             return True
 
     return False
+
+
+def log_file_content(file_path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                logger.merge(line.rstrip())
+    except Exception as e:
+        logger.error("Error reading file in log_file_content", e)
+

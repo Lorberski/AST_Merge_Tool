@@ -52,10 +52,12 @@ class Merger:
         return merged_imports_list
 
     def create_changesets(self):
-        # Die "Sequenz-Liste", die die Struktur der Datei vorgibt
+        """
+        Uses the LCS between local and remote as anchors.
+        Walks both sequences in sync, collecting gaps before each anchor as changes.
+        """
         merged_sequence = []
 
-        # Queues kopieren (wie gehabt)
         lcs_queue = self.lcs_local_and_remote_wo_imports[:]
         local_queue = self.local_nodes_wo_import[:]
         remote_queue = self.remote_nodes_wo_imports[:]
@@ -66,53 +68,39 @@ class Merger:
         change_id = 0
 
         while lcs_queue:
-            # 1. Den nächsten Anker aus dem LCS holen
+           
             anchor = lcs_queue.pop(0)
-
-            # --- GAP DETECTION (Lücke vor dem Anker suchen) ---
-
-            # Local Diff sammeln
             diff_nodes_local = []
             while local_queue and not self._are_nodes_equal(local_queue[0], anchor):
                 diff_nodes_local.append(local_queue.pop(0))
 
-            # Anker aus Local entfernen
             if local_queue:
                 local_queue.pop(0)
 
-            # Remote Diff sammeln
             diff_nodes_remote = []
             while remote_queue and not self._are_nodes_equal(remote_queue[0], anchor):
                 diff_nodes_remote.append(remote_queue.pop(0))
 
-            # Anker aus Remote entfernen
             if remote_queue:
                 remote_queue.pop(0)
 
-            # --- ENTSCHEIDUNG: GAB ES EINE LÜCKE/ÄNDERUNG? ---
             if diff_nodes_local or diff_nodes_remote:
-                # A. Mapping speichern
                 mapping_changes_left[change_id] = diff_nodes_local
                 mapping_changes_right[change_id] = diff_nodes_remote
 
-                # B. Marker in die Sequenz einfügen (VOR dem Anker)
                 merged_sequence.append(ChangeMarker(change_id))
 
                 change_id += 1
 
-            # 2. Den unveränderten Anker (LCS Node) in die Sequenz einfügen
             merged_sequence.append(anchor)
-        # --- TAIL (Rest nach dem letzten Anker) ---
 
         if local_queue or remote_queue:
-            # Mapping speichern
+
             mapping_changes_left[change_id] = list(local_queue)
             mapping_changes_right[change_id] = list(remote_queue)
 
-            # Marker ganz ans Ende der Sequenz hängen
             merged_sequence.append(ChangeMarker(change_id))
 
-        # Rückgabe: Die Struktur-Liste UND die Inhalte der Änderungen
         return merged_sequence, mapping_changes_left, mapping_changes_right
 
     def merging(self, merged_sequence, mapping_changes_left, mapping_changes_right):
